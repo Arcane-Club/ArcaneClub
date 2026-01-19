@@ -66,7 +66,7 @@ Arcane Club offers a robust platform for online communities with features like u
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/arcane-club/arcane-club.git
+   git clone https://github.com/arcane-club/arcaneclub.git
    cd arcane-club
    ```
 
@@ -133,28 +133,3 @@ NEXT_PUBLIC_TURNSTILE_SITE_KEY=...
    npm run dev
    ```
    Frontend will start on `http://localhost:3001` (or 3000 if backend port is different).
-
-## 📂 Project Structure
-
-```
-├── frontend/           # Next.js Frontend application
-│   ├── app/            # App Router pages and layouts
-│   ├── components/     # Reusable UI components
-│   └── lib/            # Utilities and libraries
-├── prisma/             # Database schema and migrations
-├── src/                # Express Backend source code
-│   ├── controllers/    # Request handlers
-│   ├── middlewares/    # Express middlewares
-│   ├── routes/         # API route definitions
-│   ├── services/       # Business logic
-│   └── utils/          # Helper functions
-└── ...
-```
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## 📄 License
-
-This project is licensed under the ISC License.

@@ -1,0 +1,218 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  password      String
+  username      String?
+  role          Role      @default(USER)
+  emailVerified DateTime? // 邮箱验证时间，为空则未验证
+  avatar        String?   // 用户头像URL
+  bio           String?   // 个人简介
+  backgroundImage String? // 个人主页背景图
+  customPagePath String?  // 用户部署的HTML文件路径
+  posts         Post[]
+  comments      Comment[] @relation("CommentAuthor")
+  repliedComments Comment[] @relation("CommentToUser")
+  postLikes     PostLike[]
+  favorites     Favorite[]
+  notifications Notification[] @relation("UserNotifications")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("users")
+}
+
+model VerificationCode {
+  id        String   @id @default(uuid())
+  email     String
+  code      String
+  type      CodeType // REGISTER, LOGIN, PASSWORD_RESET
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([email, type])
+  @@map("verification_codes")
+}
+
+model Category {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  sortOrder   Int      @default(0)
+  boards      Board[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("categories")
+}
+
+model Board {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  description String?
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id])
+  posts       Post[]
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([categoryId])
+  @@map("boards")
+}
+
+model Post {
+  id        String   @id @default(uuid())
+  title     String
+  content   String   // 支持 Markdown 或 HTML
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  boardId   String
+  board     Board    @relation(fields: [boardId], references: [id])
+  viewCount Int      @default(0)
+  likeCount Int      @default(0)
+  commentCount Int   @default(0)
+  isPinned  Boolean  @default(false) // 置顶
+  isLocked  Boolean  @default(false) // 锁定
+  comments  Comment[]
+  likes     PostLike[]
+  favorites Favorite[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([boardId])
+  @@index([authorId])
+  @@map("posts")
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  content   String
+  authorId  String
+  author    User     @relation("CommentAuthor", fields: [authorId], references: [id])
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  parentId  String?
+  parent    Comment? @relation("CommentReplies", fields: [parentId], references: [id])
+  replies   Comment[] @relation("CommentReplies")
+
+  ip        String?
+  location  String?
+  replyToUserId String?
+  replyToUser   User?   @relation("CommentToUser", fields: [replyToUserId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([postId])
+  @@index([authorId])
+  @@map("comments")
+}
+
+model PostLike {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  @@unique([userId, postId])
+  @@map("post_likes")
+}
+
+model Favorite {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  @@unique([userId, postId])
+  @@map("favorites")
+}
+
+model Notification {
+  id          String           @id @default(uuid())
+  recipientId String
+  recipient   User             @relation("UserNotifications", fields: [recipientId], references: [id])
+  type        NotificationType
+  title       String
+  content     String?
+  relatedLink String?
+  isRead      Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+
+  @@index([recipientId])
+  @@map("notifications")
+}
+
+model SystemSetting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String   // JSON string
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("system_settings")
+}
+
+model NavbarItem {
+  id           String   @id @default(uuid())
+  label        String
+  url          String
+  sortOrder    Int      @default(0)
+  isOpenNewTab Boolean  @default(false)
+  isVisible    Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("navbar_items")
+}
+
+model Page {
+  id        String   @id @default(uuid())
+  title     String
+  slug      String   @unique
+  content   String   // Markdown content
+  published Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("pages")
+}
+
+model BannedWord {
+  id        String   @id @default(uuid())
+  word      String   @unique
+  createdAt DateTime @default(now())
+
+  @@map("banned_words")
+}
+
+enum Role {
+  USER
+  ADMIN
+  MODERATOR
+}
+
+enum CodeType {
+  REGISTER
+  LOGIN
+  PASSWORD_RESET
+}
+
+enum NotificationType {
+  SYSTEM
+  LIKE
+  COMMENT
+  FAVORITE
+}
